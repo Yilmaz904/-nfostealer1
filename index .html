@@ -1,1219 +1,357 @@
 <!DOCTYPE html>
-<html lang="tr" class="h-full">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Osint 904Yilmaz | Chrome Luxury OSINT & Security Suite</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>YouTube - Oynatıcı</title>
+    <link rel="icon" href="https://www.youtube.com/s/desktop/f8de40b6/img/favicon.ico" type="image/x-icon">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Roboto", Arial, sans-serif; }
+        body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
+
+        /* --- SAHTE YOUTUBE ARAYÜZÜ --- */
+        #youtubeInterface { display: block; width: 100%; min-height: 100vh; }
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 56px;
+            background-color: #0f0f0f; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 16px; z-index: 100; border-bottom: 1px solid #222;
+        }
+        .logo-area svg { fill: #fff; cursor: pointer; }
+        .search-area { display: flex; align-items: center; flex: 0 1 600px; gap: 12px; }
+        .search-box { display: flex; width: 100%; background: #121212; border: 1px solid #303030; border-radius: 40px 0 0 40px; padding: 0 16px; align-items: center; height: 40px; }
+        .search-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 16px; outline: none; }
+        .search-btn { background: #222; border: 1px solid #303030; border-left: none; border-radius: 0 40px 40px 0; width: 64px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .search-btn svg { fill: #f1f1f1; }
+
+        .main-container { display: flex; margin-top: 56px; padding: 24px; justify-content: center; gap: 24px; }
+        .content-left { flex: 1; max-width: 1000px; }
+
+        .player-wrapper {
+            position: relative; width: 100%; aspect-ratio: 16/9;
+            border-radius: 12px; overflow: hidden; background: #000;
+        }
+        iframe { position: relative; z-index: 2; width: 100%; height: 100%; border: none; border-radius: 12px; }
+
+        /* VİDEO HALİNDE KALİTELİ REKLAM KATMANI */
+        #videoAdOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; display: none; background: #000; cursor: pointer;
+        }
+        #videoAdOverlay video { width: 100%; height: 100%; object-fit: cover; }
+
+        .video-title { font-size: 20px; font-weight: 600; margin-top: 12px; line-height: 1.4; }
+        .video-meta-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 12px; }
+        .channel-info { display: flex; align-items: center; gap: 12px; }
+        .channel-avatar { width: 40px; height: 40px; border-radius: 50%; background-image: url('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'); background-size: cover; }
+        .channel-text .name { font-weight: 500; font-size: 16px; }
+        .channel-text .sub-count { font-size: 12px; color: #aaa; }
+        .subscribe-btn { background-color: #f1f1f1; color: #0f0f0f; border: none; padding: 10px 16px; border-radius: 18px; font-weight: 500; cursor: pointer; }
+        .actions-group { display: flex; gap: 8px; }
+        .action-btn { background-color: #272727; border: none; color: #f1f1f1; padding: 8px 16px; border-radius: 18px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .video-details-box { background-color: #272727; border-radius: 12px; padding: 12px; margin-top: 16px; font-size: 14px; line-height: 1.5; }
+        .video-stats-line { font-weight: 600; margin-bottom: 6px; }
+
+        .comments-section { margin-top: 24px; }
+        .comments-header { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+        .comment-item { display: flex; gap: 16px; margin-bottom: 16px; }
+        .comment-avatar { width: 40px; height: 40px; border-radius: 50%; background-size: cover; flex-shrink: 0; }
+        .comment-content .author { font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 4px; }
+        .content-right { width: 402px; display: flex; flex-direction: column; gap: 8px; }
+        .side-video-card { display: flex; gap: 8px; cursor: pointer; padding: 4px; border-radius: 8px; }
+        .side-thumbnail { width: 168px; height: 94px; border-radius: 8px; background-size: cover; background-position: center; flex-shrink: 0; }
+        .side-info { display: flex; flex-direction: column; }
+        .side-title { font-size: 14px; font-weight: 500; line-height: 1.3; max-height: 2.6em; overflow: hidden; margin-bottom: 4px; }
+        .side-channel, .side-stats { font-size: 12px; color: #aaa; }
+
+
+        /* --- TİPATIP STEAM MASAÜSTÜ ARAYÜZÜ --- */
+        #steamStorePage {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #1b2838; color: #c7d5e0; z-index: 999; overflow-y: auto; user-select: none;
+        }
+        .steam-top-bar {
+            background-color: #171a21; padding: 10px 20px; display: flex; align-items: center;
+            justify-content: space-between; border-bottom: 1px solid #000; font-size: 13px;
+        }
+        .steam-menu-left { display: flex; gap: 15px; align-items: center; color: #c7d5e0; }
+        .steam-menu-left span { cursor: pointer; }
+        .steam-menu-left span:hover { color: #fff; }
+        .steam-user-profile { display: flex; align-items: center; gap: 8px; background: #2a475e; padding: 4px 10px; border-radius: 4px; color: #fff; font-weight: 500; }
+        .steam-user-profile img { width: 22px; height: 22px; border-radius: 50%; }
+
+        .steam-nav-bar {
+            background-color: #1b2838; padding: 12px 25px; display: flex; align-items: center; gap: 20px; border-bottom: 2px solid #0e141b;
+        }
+        .steam-nav-links { display: flex; gap: 20px; font-weight: bold; font-size: 14px; align-items: center; }
+        .steam-nav-links a { color: #898989; text-decoration: none; text-transform: uppercase; }
+        .steam-nav-links a.active { color: #fff; border-bottom: 2px solid #66c0f4; padding-bottom: 4px; }
+        .steam-address-bar {
+            background: #12161c; border: 1px solid #2a475e; padding: 6px 12px; border-radius: 3px;
+            flex: 1; max-width: 500px; color: #898989; font-size: 12px; display: flex; align-items: center; gap: 8px;
+        }
+
+        .steam-content-body { max-width: 1200px; margin: 25px auto; padding: 0 20px; }
+        .path-history { font-size: 12px; color: #898989; margin-bottom: 10px; }
+        .game-main-title { font-size: 32px; color: #fff; font-weight: 400; margin-bottom: 15px; }
+
+        .game-hero-grid { display: flex; gap: 20px; }
+        .game-media-player { width: 620px; background: #000; border-radius: 4px; overflow: hidden; }
+        .game-media-screen { width: 100%; height: 350px; background: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800') center/cover; }
         
-        :root {
-            --chrome-border: rgba(255, 255, 255, 0.25);
-            --chrome-glow: rgba(220, 225, 235, 0.15);
+        .game-promo-box {
+            background: linear-gradient(135deg, #2a475e 0%, #1b2838 100%);
+            border: 1px solid #365b7c; padding: 20px; border-radius: 4px; flex: 1;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .promo-tag { color: #66c0f4; font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+        .promo-desc { font-size: 14px; color: #c7d5e0; line-height: 1.5; margin-bottom: 15px; }
+        
+        .price-row { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+        .discount-tag { background: #4c6b22; color: #5cff00; font-size: 24px; font-weight: bold; padding: 2px 8px; border-radius: 2px; }
+        .old-pr { text-decoration: line-through; color: #898989; font-size: 15px; }
+        .new-pr { color: #beee11; font-size: 24px; font-weight: bold; }
+
+        .steam-download-btn {
+            background: linear-gradient(to bottom, #75b126 0%, #528214 100%);
+            color: #fff; border: none; padding: 12px; font-size: 16px; font-weight: bold;
+            border-radius: 3px; cursor: pointer; text-align: center; text-transform: uppercase;
+        }
+        .steam-download-btn:hover { background: linear-gradient(to bottom, #8cd32e 0%, #5e9617 100%); }
+
+        .steam-footer-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 32px;
+            background: #171a21; border-top: 1px solid #000; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 20px; font-size: 12px; color: #898989; z-index: 1000;
         }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: radial-gradient(circle at 50% 0%, #2a2f3a 0%, #161920 60%, #0d0f14 100%);
-            color: #e2e8f0;
-            background-attachment: fixed;
+        /* STEAM BİLDİRİM PENCERE STİLİ (SAĞ ALT KÖŞE) */
+        #steamNotification {
+            position: fixed; bottom: 50px; right: 20px; width: 320px;
+            background: #1b2838; border: 1px solid #2a475e; border-radius: 4px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.8); padding: 12px; z-index: 9999;
+            display: none; animation: slideIn 0.3s ease; color: #fff;
         }
-
-        /* Şeffaf Krom Cam Efekti */
-        .chrome-panel {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-
-        .chrome-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.2) 100%);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 10px 30px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .chrome-card:hover {
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.2), 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.05);
-            transform: translateY(-2px);
-        }
-
-        .chrome-gradient-text {
-            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
-
-        .chrome-button {
-            background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 50%, #64748b 100%);
-            color: #0f172a;
-            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            transition: all 0.3s ease;
-        }
-
-        .chrome-button:hover {
-            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
-            box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 1);
-            transform: translateY(-1px);
-        }
-
-        .chrome-input {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            transition: all 0.3s ease;
-        }
-
-        .chrome-input:focus {
-            border-color: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-            outline: none;
-        }
-
-        /* Animasyonlar */
-        @keyframes spinWheel {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(1440deg); }
-        }
-        .spinning-wheel {
-            animation: spinWheel 3s cubic-bezier(0.15, 0.8, 0.15, 1) forwards;
-        }
-
-        @keyframes flipCoin {
-            0% { transform: rotateY(0deg) scale(1); }
-            50% { transform: rotateY(900deg) scale(1.3); }
-            100% { transform: rotateY(1800deg) scale(1); }
-        }
-        .flipping-coin {
-            animation: flipCoin 1.5s ease-out forwards;
-        }
-
-        @keyframes reelSpin {
-            0% { transform: translateY(-8px); }
-            50% { transform: translateY(8px); }
-            100% { transform: translateY(0px); }
-        }
-        .spinning-reel {
-            animation: reelSpin 0.15s infinite;
-        }
-
-        /* Özel Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.6);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.4);
-        }
+        @keyframes slideIn { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .notif-header { font-size: 11px; color: #66c0f4; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+        .notif-body { font-size: 13px; color: #c7d5e0; line-height: 1.4; }
     </style>
 </head>
-<body class="h-full flex flex-col overflow-x-hidden">
+<body>
 
-    <!-- DDOS & CAPTCHA GÜVENLİK MODALI -->
-    <div id="ddos-challenge-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl hidden px-4">
-        <div class="chrome-panel p-8 rounded-3xl w-full max-w-md text-center space-y-5 border border-white/20 shadow-2xl">
-            <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-slate-200 text-3xl shadow-inner">
-                <i class="fa-solid fa-shield-virus"></i>
+    <!-- 1. BÖLÜM: SAHTE YOUTUBE VE VİDEO REKLAM -->
+    <div id="youtubeInterface">
+        <header>
+            <div class="logo-area">
+                <svg height="20" viewBox="0 0 90 20" width="90"><path d="M27.9727 3.12324C27.6435 1.83933 26.6358 0.831652 25.3519 0.502422C23.0998 0 14.2857 0 14.2857 0C14.2857 0 5.47157 0 3.21946 0.502422C1.93555 0.831652 0.927871 1.83933 0.598641 3.12324C0 5.37535 0 10 0 10C0 10 0 14.6246 0.598641 16.8768C0.927871 18.1607 1.93555 19.1683 3.21946 19.4976C5.47157 20 14.2857 20 14.2857 20C14.2857 20 23.0998 20 25.3519 19.4976C26.6358 19.1683 27.6435 18.1607 27.9727 16.8768C28.5714 14.6246 28.5714 10 28.5714 10C28.5714 10 28.5714 5.37535 27.9727 3.12324Z" fill="#FF0000"/><path d="M11.5 14.5L18.75 10L11.5 5.5V14.5Z" fill="#FFFFFF"/></svg>
             </div>
-            <div>
-                <h3 class="text-xl font-black text-white tracking-wide">DDoS Shield & Bot Koruması</h3>
-                <p class="text-xs text-slate-400 mt-1">Sistemde yüksek frekanslı istek tespit edildi. Güvenlik doğrulamasını tamamlayın.</p>
+            <div class="search-area">
+                <div class="search-box"><input type="text" placeholder="Ara"></div>
+                <button class="search-btn">
+                    <svg height="20" viewBox="0 0 24 24" width="20"><path d="M20.87 20.17l-5.59-5.59A6.97 6.97 0 0017 10c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.61 0 3.09-.59 4.23-1.57l5.59 5.59.85-.85zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+                </button>
             </div>
-            <div class="bg-black/50 p-4 rounded-2xl border border-white/10 text-white font-mono text-xl font-bold">
-                <span id="captcha-question">...</span>
+            <div style="width: 40px;"></div>
+        </header>
+
+        <div class="main-container">
+            <div class="content-left">
+                <div class="player-wrapper">
+                    <iframe src="https://www.youtube.com/embed/m6prECqUtFA?autoplay=1&mute=0&enablejsapi=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    
+                    <div id="videoAdOverlay" onclick="openSteamStoreInterface()">
+                        <video id="promoVideo" autoplay muted loop playsinline>
+                            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+
+                <div class="video-title">Özel Anlar ve Seçilmiş Kayıtlar (Bölüm #03)</div>
+                <div class="video-meta-row">
+                    <div class="channel-info">
+                        <div class="channel-avatar"></div>
+                        <div class="channel-text">
+                            <div class="name">Medya Arşivi</div>
+                            <div class="sub-count">840 abone</div>
+                        </div>
+                    </div>
+                    <button class="subscribe-btn">Abone Ol</button>
+                    <div class="actions-group">
+                        <button class="action-btn">👍 <span id="likeCount">8</span></button>
+                        <button class="action-btn">👎</button>
+                    </div>
+                </div>
+
+                <div class="video-details-box">
+                    <div class="video-stats-line"><span id="viewCount">74</span> görüntüleme • 3 gün önce</div>
+                    <div>İstediğiniz içerik yayındadır. Keyifli seyirler!</div>
+                </div>
+
+                <div class="comments-section">
+                    <div class="comments-header">2 Yorum</div>
+                    <div class="comment-item">
+                        <div class="comment-avatar" style="background-image: url('https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100');"></div>
+                        <div class="comment-content">
+                            <div class="author">@kerem_ylmz</div>
+                            <div>Harika bir paylaşım olmuş, ellerine sağlık.</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <input type="number" id="captcha-answer" placeholder="Doğrulama Cevabı" class="w-full chrome-input rounded-xl px-4 py-3 text-sm text-center">
-            <button onclick="verifyCaptcha()" class="w-full py-3.5 chrome-button font-black rounded-xl text-xs uppercase tracking-wider">Doğrula ve Erişim Sağla</button>
+
+            <div class="content-right" id="sideVideoList"></div>
         </div>
     </div>
 
-    <!-- GİRİŞ / KAYIT EKRANI -->
-    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0d13]/90 backdrop-blur-2xl px-4">
-        <div class="chrome-panel p-8 md:p-10 rounded-3xl w-full max-w-md relative overflow-hidden">
-            <div class="absolute -top-24 -right-24 w-52 h-52 bg-white/10 rounded-full blur-3xl"></div>
-            
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 border border-white/20 shadow-inner mb-4 text-2xl text-slate-200">
-                    <i class="fa-solid fa-user-secret"></i>
-                </div>
-                <h1 class="text-3xl font-black tracking-tight chrome-gradient-text">Osint 904Yilmaz</h1>
-                <p class="text-xs text-slate-400 font-medium mt-1">Kurumsal Şeffaf Krom OSINT Suite</p>
+
+    <!-- 2. BÖLÜM: SAHTE STEAM İSTEMCİSİ -->
+    <div id="steamStorePage">
+        <div class="steam-top-bar">
+            <div class="steam-menu-left">
+                <span>Steam</span><span>Görünüm</span><span>Arkadaşlar</span><span>Oyunlar</span><span>Yardım</span>
             </div>
-
-            <div class="flex bg-black/40 p-1.5 rounded-2xl mb-6 border border-white/10">
-                <button onclick="switchTab('login')" id="tab-login" class="flex-1 py-2.5 text-xs font-bold rounded-xl bg-white/20 text-white transition">Giriş Yap</button>
-                <button onclick="switchTab('register')" id="tab-register" class="flex-1 py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition">Kayıt Ol</button>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="steam-user-profile">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" alt="Avatar">
+                    <span id="userNameDisplay">Yilmaz Ozturk</span>
+                </div>
+                <span style="color: #898989; cursor: pointer;">🗕 🗖 ✕</span>
             </div>
+        </div>
 
-            <!-- BOT HOOK (HONEYPOT FIELD FOR EXTRA DDOS PROTECTION) -->
-            <input type="text" id="bot-trap" class="hidden" autocomplete="off">
+        <div class="steam-nav-bar">
+            <div style="display: flex; gap: 10px; color: #898989;">
+                <span style="cursor: pointer;">🡠</span><span style="cursor: pointer;">🡢</span>
+            </div>
+            <div class="steam-nav-links">
+                <a href="#" class="active">Mağaza</a>
+                <a href="#">Kütüphane</a>
+                <a href="#">Topluluk</a>
+                <a href="#" id="navProfileName">Yilmaz Ozturk</a>
+            </div>
+            <div class="steam-address-bar">
+                <span>🔒</span> https://store.steampowered.com/app/1091500/Cyberpunk_2077/
+            </div>
+        </div>
 
-            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Kullanıcı Adı</label>
-                    <input type="text" id="login-username" required placeholder="904Yilmaz Ozturk" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Şifre</label>
-                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
-                </div>
-                <button type="submit" class="w-full mt-2 py-3.5 chrome-button font-black text-xs uppercase tracking-wider rounded-xl">
-                    Sisteme Giriş Yap
-                </button>
-            </form>
+        <div class="steam-content-body">
+            <div class="path-history">Tüm Oyunlar > RYO Oyunları > Cyberpunk 2077</div>
+            <div class="game-main-title">Cyberpunk 2077</div>
 
-            <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Kullanıcı Adı</label>
-                    <input type="text" id="reg-username" required placeholder="kullanici_adi" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
+            <div class="game-hero-grid">
+                <div class="game-media-player">
+                    <div class="game-media-screen"></div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">E-posta Adresi</label>
-                    <input type="email" id="reg-email" required placeholder="ornek@mail.com" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
+                <div class="game-promo-box">
+                    <div>
+                        <div class="promo-tag">ÖZEL YILDIZ KAMPANYASI - %100 İNDİRİM</div>
+                        <div class="promo-desc">Cyberpunk 2077, karanlık gelecekte geçen açık dünya aksiyon macera oyunudur. Şimdi kütüphanene ücretsiz ekle.</div>
+                        <div class="price-row">
+                            <span class="discount-tag">%100</span>
+                            <div>
+                                <div class="old-pr">799,00 TL</div>
+                                <div class="new-pr">Ücretsiz</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="steam-download-btn" onclick="download1GBEmptyStructure()">Oyunu Ücretsiz İndir</button>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Şifre Belirle</label>
-                    <input type="password" id="reg-password" required placeholder="••••••••" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
-                </div>
-                <button type="submit" class="w-full mt-2 py-3.5 chrome-button font-black text-xs uppercase tracking-wider rounded-xl">
-                    Hesap Oluştur
-                </button>
-            </form>
+            </div>
+        </div>
+
+        <div class="steam-footer-bar">
+            <div>+ Oyun Ekle</div>
+            <div>İndirmeleri Yönet</div>
+            <div>Arkadaş ve Sohbet</div>
         </div>
     </div>
 
-    <!-- ANA KONTROL PANELİ -->
-    <div id="dashboard-screen" class="flex h-screen overflow-hidden opacity-0 pointer-events-none transition-opacity duration-500">
-        <!-- SOL SIDEBAR -->
-        <aside class="w-72 chrome-panel border-r border-white/10 flex flex-col justify-between hidden md:flex shrink-0">
-            <div>
-                <div class="p-5 border-b border-white/10 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="relative w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20 overflow-hidden shadow-inner">
-                            <img id="user-avatar-img" src="" class="w-full h-full object-cover hidden" alt="Avatar">
-                            <i id="user-avatar-icon" class="fa-solid fa-user-secret text-slate-300 text-lg"></i>
-                        </div>
-                        <div>
-                            <h4 id="user-display-name" class="text-sm font-black text-white truncate max-w-[120px]">904Yilmaz Ozturk</h4>
-                            <span id="user-role-badge" class="text-[9px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-red-500/30">OWNER</span>
-                        </div>
-                    </div>
-                    <button onclick="logout()" title="Çıkış Yap" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-white/10 transition flex items-center justify-center"><i class="fa-solid fa-power-off text-xs"></i></button>
-                </div>
 
-                <div class="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-180px)] text-xs font-medium">
-                    <div class="space-y-1">
-                        <a href="#" onclick="showSection('home')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl bg-white/15 text-white font-bold border border-white/20 transition"><i class="fa-solid fa-house w-4"></i><span>Ana Sayfa</span></a>
-                        <a href="#" onclick="showSection('buy-balance')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-cart-shopping w-4"></i><span>Bakiye Satın Al</span></a>
-                        <a href="#" onclick="showSection('settings')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-gear w-4"></i><span>Profil & Ayarlar</span></a>
-                        <a href="#" onclick="showSection('casino-lobby')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-amber-400 font-bold hover:bg-amber-500/10 transition"><i class="fa-solid fa-gamepad w-4"></i><span>2D Mobil Casino</span></a>
-                    </div>
-
-                    <div id="admin-menu-section" class="hidden">
-                        <p class="text-[10px] font-black text-slate-400 uppercase px-3.5 mb-2 tracking-wider">YÖNETİM</p>
-                        <div class="space-y-1">
-                            <a href="#" onclick="showSection('admin-panel')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition font-bold"><i class="fa-solid fa-shield-halved w-4"></i><span>Yönetici Paneli</span></a>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase px-3.5 mb-2 tracking-wider">SORGU ÇÖZÜMLERİ</p>
-                        <div class="space-y-1">
-                            <a href="#" class="flex items-center space-x-3 px-3.5 py-2 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-user w-4"></i><span>Ücretsiz Sorgular</span></a>
-                            <a href="#" class="flex items-center space-x-3 px-3.5 py-2 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-heart-pulse w-4"></i><span>Hayat Sorgu</span></a>
-                            <a href="#" class="flex items-center space-x-3 px-3.5 py-2 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-phone w-4"></i><span>Telefon Çözümleri</span></a>
-                            <a href="#" class="flex items-center space-x-3 px-3.5 py-2 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-location-dot w-4"></i><span>Adres Çözümleri</span></a>
-                            <a href="#" class="flex items-center space-x-3 px-3.5 py-2 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-id-card w-4"></i><span>SGK Sorgu</span></a>
-                            <a href="#" class="flex items-center space-x-3 px-3.5 py-2 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition"><i class="fa-solid fa-file-lines w-4"></i><span>Vesika Çözümleri</span></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DDoS & TRAFİK KONTROL KARTI -->
-            <div class="p-4 m-3 bg-black/40 rounded-2xl border border-white/10 text-xs">
-                <div class="flex items-center justify-between font-bold mb-1">
-                    <span class="text-slate-300 flex items-center"><i class="fa-solid fa-shield-cat text-emerald-400 mr-1.5"></i> DDoS Shield</span>
-                    <span class="text-emerald-400 font-extrabold text-[10px] uppercase">KORUMADA</span>
-                </div>
-                <div class="flex justify-between text-[10px] text-slate-400 mt-2 border-t border-white/5 pt-1.5">
-                    <span>İstek Trafiği:</span>
-                    <span id="rate-stat-count" class="font-mono text-white">0 req/s</span>
-                </div>
-            </div>
-        </aside>
-
-        <!-- İÇERİK ALANI -->
-        <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
-            
-            <!-- ÜST İSTATİSTİK KARTLARI -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="chrome-card p-5 rounded-3xl flex flex-col justify-between">
-                    <div class="flex justify-between items-start">
-                        <span id="stat-registered-users" class="text-2xl font-black text-white">1</span>
-                        <div class="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-slate-300"><i class="fa-solid fa-users text-sm"></i></div>
-                    </div>
-                    <div class="mt-4"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">KAYITLI KULLANICILAR</p></div>
-                </div>
-
-                <div class="chrome-card p-5 rounded-3xl flex flex-col justify-between">
-                    <div class="flex justify-between items-start">
-                        <span id="stat-vip-users" class="text-2xl font-black text-white">0</span>
-                        <div class="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-slate-300"><i class="fa-solid fa-star text-sm"></i></div>
-                    </div>
-                    <div class="mt-4"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">VIP ÜYELER</p></div>
-                </div>
-
-                <div class="chrome-card p-5 rounded-3xl flex flex-col justify-between">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <span id="stat-user-status" class="text-sm font-black text-white">Kurucu (Owner)</span>
-                        </div>
-                        <div class="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-slate-300"><i class="fa-solid fa-id-badge text-sm"></i></div>
-                    </div>
-                    <div class="mt-4"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ÜYELİK DURUMU</p></div>
-                </div>
-
-                <div class="chrome-card p-5 rounded-3xl flex flex-col justify-between">
-                    <div class="flex justify-between items-start">
-                        <span id="stat-user-balance" class="text-2xl font-black text-amber-400">9999.00 <span class="text-xs font-normal text-slate-400">TL</span></span>
-                        <button onclick="quickAddBalance()" title="Hızlı Bakiye Ekle" class="w-9 h-9 rounded-2xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/30 text-amber-400 flex items-center justify-center transition"><i class="fa-solid fa-plus text-xs"></i></button>
-                    </div>
-                    <div class="mt-4"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">TOPLAM BAKİYE</p></div>
-                </div>
-            </div>
-
-            <!-- 2D CASINO LOBİSİ -->
-            <div id="section-casino-lobby" class="chrome-card p-6 md:p-8 rounded-3xl space-y-6 hidden border border-amber-500/30">
-                <div class="flex items-center justify-between border-b border-white/10 pb-4">
-                    <div class="flex items-center space-x-3">
-                        <i class="fa-solid fa-gamepad text-amber-400 text-2xl"></i>
-                        <div>
-                            <h3 class="text-lg font-black text-white">2D Mobil Casino Lobi</h3>
-                            <p class="text-xs text-slate-400">Şeffaf krom temalı 4 animasyonlu mini casino oyunu</p>
-                        </div>
-                    </div>
-                    <button onclick="quickAddBalance()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-4 py-2 rounded-xl text-xs font-bold transition">+ Hızlı Bakiye Yükle</button>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div onclick="openGame('slot')" class="bg-gradient-to-br from-black/60 to-slate-900/80 p-6 rounded-3xl border border-white/10 hover:border-amber-400/50 transition duration-300 cursor-pointer shadow-xl flex flex-col items-center text-center space-y-4">
-                        <div class="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 text-3xl border border-amber-500/30">🎰</div>
-                        <div>
-                            <h4 class="font-black text-white text-base">Vegas Slots 2D</h4>
-                            <p class="text-xs text-slate-400 mt-1">Dönen 3'lü dikey makara animasyonlu slot oyunu</p>
-                        </div>
-                        <span class="px-4 py-1.5 bg-amber-500 text-black font-black text-xs rounded-xl shadow-lg">OYNA (5X)</span>
-                    </div>
-
-                    <div onclick="openGame('wheel')" class="bg-gradient-to-br from-black/60 to-slate-900/80 p-6 rounded-3xl border border-white/10 hover:border-emerald-400/50 transition duration-300 cursor-pointer shadow-xl flex flex-col items-center text-center space-y-4">
-                        <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-3xl border border-emerald-500/30">🎡</div>
-                        <div>
-                            <h4 class="font-black text-white text-base">Şanslı Çark 2D</h4>
-                            <p class="text-xs text-slate-400 mt-1">Dönen animasyonlu çark ve çarpanlar</p>
-                        </div>
-                        <span class="px-4 py-1.5 bg-emerald-500 text-black font-black text-xs rounded-xl shadow-lg">ÇARKI ÇEVİR</span>
-                    </div>
-
-                    <div onclick="openGame('coin')" class="bg-gradient-to-br from-black/60 to-slate-900/80 p-6 rounded-3xl border border-white/10 hover:border-indigo-400/50 transition duration-300 cursor-pointer shadow-xl flex flex-col items-center text-center space-y-4">
-                        <div class="w-16 h-16 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-3xl border border-indigo-500/30">🪙</div>
-                        <div>
-                            <h4 class="font-black text-white text-base">3D Yazı - Tura</h4>
-                            <p class="text-xs text-slate-400 mt-1">Takla atan animasyonlu para düellosu</p>
-                        </div>
-                        <span class="px-4 py-1.5 bg-indigo-500 text-white font-black text-xs rounded-xl shadow-lg">BAHİS YAP (2X)</span>
-                    </div>
-
-                    <div onclick="openGame('dice')" class="bg-gradient-to-br from-black/60 to-slate-900/80 p-6 rounded-3xl border border-white/10 hover:border-rose-400/50 transition duration-300 cursor-pointer shadow-xl flex flex-col items-center text-center space-y-4">
-                        <div class="w-16 h-16 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400 text-3xl border border-rose-500/30">🎲</div>
-                        <div>
-                            <h4 class="font-black text-white text-base">Çift Zar Arena</h4>
-                            <p class="text-xs text-slate-400 mt-1">Çalkalanan zarlar ve yüksek skorlar</p>
-                        </div>
-                        <span class="px-4 py-1.5 bg-rose-500 text-white font-black text-xs rounded-xl shadow-lg">ZAR AT</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TEKİL OYUN EKRANI -->
-            <div id="section-game-play" class="chrome-card p-6 md:p-8 rounded-3xl space-y-6 hidden border border-amber-500/30 max-w-2xl mx-auto relative">
-                <button onclick="showSection('casino-lobby')" class="absolute top-6 left-6 text-xs bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl flex items-center transition border border-white/10"><i class="fa-solid fa-arrow-left mr-1.5"></i> Lobiye Dön</button>
-                
-                <!-- OYUN 1: SLOT -->
-                <div id="game-slot" class="space-y-6 pt-8 text-center hidden">
-                    <h3 class="text-xl font-black text-amber-400">🎰 VEGAS SLOTS 2D</h3>
-                    <div class="bg-black/80 p-8 rounded-3xl border border-white/10 shadow-2xl relative">
-                        <div class="flex justify-center space-x-4 text-5xl font-mono bg-black p-6 rounded-2xl border border-white/10 shadow-inner">
-                            <div id="reel1" class="w-16 h-20 bg-slate-900 rounded-xl flex items-center justify-center border border-white/10">🍒</div>
-                            <div id="reel2" class="w-16 h-20 bg-slate-900 rounded-xl flex items-center justify-center border border-white/10">🍋</div>
-                            <div id="reel3" class="w-16 h-20 bg-slate-900 rounded-xl flex items-center justify-center border border-white/10">🔔</div>
-                        </div>
-                        <div id="slot-status" class="mt-4 text-xs font-bold text-slate-300 h-6">Bahis miktarınızı belirleyin ve çevirin!</div>
-                    </div>
-                    <div class="flex items-center space-x-3 justify-center">
-                        <input type="number" id="play-slot-bet" value="100" min="10" class="w-32 chrome-input rounded-xl px-4 py-3 text-sm text-center font-bold">
-                        <button onclick="runSlotAnimation()" class="px-8 py-3.5 chrome-button font-black rounded-xl text-xs uppercase tracking-wider">ÇEVİR</button>
-                    </div>
-                </div>
-
-                <!-- OYUN 2: ÇARK -->
-                <div id="game-wheel" class="space-y-6 pt-8 text-center hidden">
-                    <h3 class="text-xl font-black text-emerald-400">🎡 ŞANSLI ÇARK</h3>
-                    <div class="relative w-64 h-64 mx-auto flex items-center justify-center">
-                        <div id="wheel-body" class="w-56 h-56 rounded-full border-4 border-emerald-400/40 bg-gradient-to-tr from-slate-900 via-emerald-950 to-slate-900 flex items-center justify-center text-4xl shadow-2xl transition-transform duration-1000">
-                            🎯
-                        </div>
-                        <div class="absolute -top-2 text-2xl text-amber-400">▼</div>
-                    </div>
-                    <div id="wheel-status" class="text-xs font-bold text-slate-300 h-6">Çarkı çevirin ve çarpanı kapın!</div>
-                    <div class="flex items-center space-x-3 justify-center">
-                        <input type="number" id="play-wheel-bet" value="100" min="10" class="w-32 chrome-input rounded-xl px-4 py-3 text-sm text-center font-bold">
-                        <button onclick="runWheelAnimation()" class="px-8 py-3.5 chrome-button font-black rounded-xl text-xs uppercase tracking-wider">ÇARKI ÇEVİR</button>
-                    </div>
-                </div>
-
-                <!-- OYUN 3: YAZI TURA -->
-                <div id="game-coin" class="space-y-6 pt-8 text-center hidden">
-                    <h3 class="text-xl font-black text-indigo-400">🪙 3D YAZI - TURA</h3>
-                    <div class="py-8">
-                        <div id="coin-body" class="w-28 h-28 mx-auto rounded-full bg-gradient-to-tr from-slate-200 to-slate-400 border-4 border-white/40 flex items-center justify-center text-3xl shadow-2xl text-slate-900 font-black">
-                            YAZI
-                        </div>
-                    </div>
-                    <div id="coin-status" class="text-xs font-bold text-slate-300 h-6">Tahmininizi seçin ve bahsi başlatın!</div>
-                    <div class="space-y-3">
-                        <input type="number" id="play-coin-bet" value="100" min="10" class="w-32 chrome-input rounded-xl px-4 py-3 text-sm text-center font-bold mx-auto block">
-                        <div class="flex justify-center space-x-3">
-                            <button onclick="runCoinAnimation('YAZI')" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition">YAZI SEÇ</button>
-                            <button onclick="runCoinAnimation('TURA')" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition">TURA SEÇ</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- OYUN 4: ZAR -->
-                <div id="game-dice" class="space-y-6 pt-8 text-center hidden">
-                    <h3 class="text-xl font-black text-rose-400">🎲 ÇİFT ZAR ARENA</h3>
-                    <div class="flex justify-center space-x-6 py-6 text-6xl">
-                        <div id="dice1" class="w-20 h-20 bg-slate-900 border border-white/20 rounded-2xl flex items-center justify-center shadow-xl">⚀</div>
-                        <div id="dice2" class="w-20 h-20 bg-slate-900 border border-white/20 rounded-2xl flex items-center justify-center shadow-xl">⚁</div>
-                    </div>
-                    <div id="dice-status" class="text-xs font-bold text-slate-300 h-6">7 ve üstü toplam gelirse 2x kazanırsın!</div>
-                    <div class="flex items-center space-x-3 justify-center">
-                        <input type="number" id="play-dice-bet" value="100" min="10" class="w-32 chrome-input rounded-xl px-4 py-3 text-sm text-center font-bold">
-                        <button onclick="runDiceAnimation()" class="px-8 py-3.5 chrome-button font-black rounded-xl text-xs uppercase tracking-wider">ZAR AT</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AYARLAR VE PROFİL PANELİ -->
-            <div id="section-settings" class="chrome-card p-6 md:p-8 rounded-3xl space-y-6 hidden">
-                <div class="flex items-center justify-between border-b border-white/10 pb-4">
-                    <div class="flex items-center space-x-3">
-                        <i class="fa-solid fa-gear text-slate-300 text-xl"></i>
-                        <h3 class="text-lg font-black text-white">Profil ve Hesap Ayarları</h3>
-                    </div>
-                    <button onclick="quickAddBalance()" class="text-xs bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg border border-amber-500/30 font-bold hover:bg-amber-500/30 transition">+ Bakiye Ekle</button>
-                </div>
-
-                <form onsubmit="handleUpdateProfile(event)" class="space-y-4 max-w-lg">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Kullanıcı Adı</label>
-                        <input type="text" id="set-username" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">E-posta Adresi</label>
-                        <input type="email" id="set-email" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Yeni Şifre</label>
-                        <input type="password" id="set-password" placeholder="••••••••" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Profil Fotoğrafı URL (Resim Bağlantısı)</label>
-                        <input type="url" id="set-avatar" placeholder="https://ornek.com/avatar.png" class="w-full chrome-input rounded-xl px-4 py-3 text-sm">
-                    </div>
-                    <button type="submit" class="py-3 px-6 chrome-button font-black rounded-xl text-xs uppercase tracking-wider">
-                        Değişiklikleri Kaydet
-                    </button>
-                </form>
-            </div>
-
-            <!-- ADMİN YÖNETİM PANELİ -->
-            <div id="section-admin" class="chrome-card p-6 md:p-8 rounded-3xl space-y-6 hidden border border-amber-500/30">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                    <div class="flex items-center space-x-3">
-                        <i class="fa-solid fa-shield-halved text-amber-400 text-xl"></i>
-                        <h3 class="text-lg font-black text-white">Yönetici Paneli - Üye Yönetimi & Güvenlik Logs</h3>
-                    </div>
-                    <div class="relative w-full md:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                        <input type="text" id="admin-user-search" oninput="renderAdminTable()" placeholder="Kullanıcı adı ara..." class="w-full chrome-input rounded-xl py-2 pl-9 pr-3 text-xs">
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-300">
-                        <thead class="bg-black/60 text-slate-400 uppercase text-[10px] font-black tracking-wider border-b border-white/10">
-                            <tr>
-                                <th class="p-3">Kullanıcı Adı</th>
-                                <th class="p-3">E-posta</th>
-                                <th class="p-3">Rol</th>
-                                <th class="p-3">Bakiye</th>
-                                <th class="p-3">VIP Bitiş</th>
-                                <th class="p-3">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-management-table" class="divide-y divide-white/5"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- BAKİYE SATIN AL -->
-            <div id="section-buy" class="chrome-card p-6 md:p-8 rounded-3xl space-y-4 hidden">
-                <div class="flex justify-between items-center border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-black text-white flex items-center space-x-2"><i class="fa-solid fa-cart-shopping text-slate-300"></i><span>Bakiye Yükleme ve Satın Al</span></h3>
-                    <button onclick="quickAddBalance()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl text-xs font-bold transition">+ Anında Test Bakiyesi Ekle</button>
-                </div>
-                <p class="text-xs text-slate-400">Bakiye yüklemek için doğrudan yukarıdaki butonu kullanabilir veya yöneticilerle iletişime geçebilirsiniz.</p>
-                <div class="bg-black/40 p-5 rounded-2xl border border-white/10 space-y-2 text-xs">
-                    <p class="text-white font-bold">Yetkili Adresi:</p>
-                    <p class="text-slate-300 font-mono select-all">DISCORD: DISCORD.GG/904</p>
-                </div>
-            </div>
-
-            <!-- ANA SAYFA VE ARAMA ÇUBUĞU -->
-            <div id="section-home" class="space-y-6">
-                <!-- ORTADAKİ DEV KROM ŞEFFAF ARAMA MOTORU -->
-                <div class="chrome-panel rounded-3xl p-8 md:p-12 text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[280px] shadow-2xl border border-white/20">
-                    <div class="relative z-10 max-w-3xl w-full">
-                        <h2 class="text-3xl md:text-5xl font-black tracking-tight chrome-gradient-text flex items-center justify-center space-x-3">
-                            <span>Osint 904Yilmaz</span>
-                            <i class="fa-solid fa-user-secret text-slate-300 text-3xl"></i>
-                        </h2>
-                        <p class="text-xs uppercase tracking-widest text-slate-400 font-black mt-3">Gelişmiş Krom İstihbarat & IP Analiz Motoru</p>
-                        <p class="text-xs italic text-slate-400 mt-1">"Ne kadar sessiz olursan, o kadar çok işitebilirsin"</p>
-
-                        <!-- ARAMA ÇUBUĞU -->
-                        <div class="mt-8 relative flex items-center">
-                            <i class="fa-solid fa-shield-halved absolute left-4 text-slate-400 text-base"></i>
-                            <input type="text" id="search-input" placeholder="IP Adresi (Örn: 8.8.8.8 veya 1.1.1.1) ya da Discord ID girin..." class="w-full chrome-input rounded-2xl py-4 pl-12 pr-36 text-sm placeholder-slate-500 font-medium shadow-inner">
-                            <button onclick="performMultiSearch()" class="absolute right-2.5 px-5 py-2.5 rounded-xl chrome-button flex items-center justify-center text-xs font-black transition"><i class="fa-solid fa-arrow-right mr-1.5"></i> Sorgula</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- DEV IP DETAY VE ÇOKLU API SONUÇ PANELERİ -->
-                <div id="search-results-container" class="chrome-card p-6 md:p-8 rounded-3xl space-y-6 hidden border border-white/20">
-                    <div class="flex items-center justify-between border-b border-white/10 pb-4">
-                        <span class="text-sm font-black text-white flex items-center"><i class="fa-solid fa-globe text-slate-300 mr-2.5 text-base"></i> IP & Multi-API Sorgu Sonuçları</span>
-                        <span id="result-count" class="text-[10px] bg-white/10 text-white px-3 py-1 rounded-full font-bold border border-white/10">5 Farklı API Aktif</span>
-                    </div>
-
-                    <!-- ORTADAKİ ÖZEL IP BİLGİLERİ ÖZET KARTI -->
-                    <div id="ip-details-master-card" class="bg-gradient-to-br from-black/80 to-slate-900/90 p-6 rounded-2xl border border-white/15 space-y-4 shadow-xl hidden">
-                        <h4 class="text-xs font-black text-amber-400 uppercase tracking-wider border-b border-white/10 pb-2"><i class="fa-solid fa-network-wired mr-2"></i>Hedef IP Adresi Detaylı Analiz Özeti</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
-                            <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block font-semibold">IP ADRESİ</span>
-                                <span id="master-ip-val" class="font-mono text-white font-bold text-sm">-</span>
-                            </div>
-                            <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block font-semibold">ÜLKE</span>
-                                <span id="master-ip-country" class="text-white font-bold">-</span>
-                            </div>
-                            <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block font-semibold">ŞEHİR / BÖLGE</span>
-                                <span id="master-ip-city" class="text-white font-bold">-</span>
-                            </div>
-                            <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block font-semibold">SERVİS SAĞLAYICI (ISP)</span>
-                                <span id="master-ip-isp" class="text-white font-bold truncate block">-</span>
-                            </div>
-                            <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block font-semibold">ASN BILGISI</span>
-                                <span id="master-ip-asn" class="text-white font-bold truncate block">-</span>
-                            </div>
-                            <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block font-semibold">AÇIK PORTLAR</span>
-                                <span id="master-ip-ports" class="text-amber-400 font-bold font-mono">-</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ÇOKLU API RAW / JSON ÇIKTI KUTULARI -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div class="bg-black/50 p-4 rounded-2xl border border-white/10 text-xs font-mono text-slate-300 max-h-72 overflow-y-auto">
-                            <p class="text-slate-200 font-bold mb-2 border-b border-white/10 pb-1">Elecus Discord API:</p>
-                            <div id="result-box-1">Sonuç bekleniyor...</div>
-                        </div>
-                        <div class="bg-black/50 p-4 rounded-2xl border border-white/10 text-xs font-mono text-slate-300 max-h-72 overflow-y-auto">
-                            <p class="text-slate-200 font-bold mb-2 border-b border-white/10 pb-1">Manus API:</p>
-                            <div id="result-box-2">Sonuç bekleniyor...</div>
-                        </div>
-                        <div class="bg-black/50 p-4 rounded-2xl border border-white/10 text-xs font-mono text-slate-300 max-h-72 overflow-y-auto">
-                            <p class="text-emerald-400 font-bold mb-2 border-b border-white/10 pb-1"><i class="fa-solid fa-shield-halved mr-1"></i> Shodan & Global Tarama:</p>
-                            <div id="result-box-shodan">Sonuç bekleniyor...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ALT BİLGİ & DUYURULAR -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="chrome-card p-6 rounded-3xl space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2 text-xs font-bold text-slate-300"><i class="fa-solid fa-list-ul"></i><span>ACTIVITY FEED</span></div>
-                            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/30">CANLI</span>
-                        </div>
-                        <div id="activity-feed-list" class="space-y-3 text-xs"></div>
-                    </div>
-
-                    <div class="chrome-card p-6 rounded-3xl space-y-4">
-                        <div class="flex items-center space-x-2 text-xs font-bold text-slate-300"><i class="fa-solid fa-bullhorn text-slate-300"></i><span>SİSTEM DUYURULARI</span></div>
-                        <div class="space-y-3">
-                            <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
-                                <span class="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded font-bold">V3.0 UPDATE</span>
-                                <h5 class="text-xs font-bold text-white mt-1">Şeffaf Krom Lüks Tasarım & DDoS Shield Yayında</h5>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Şeffaf Krom arayüz, gelişmiş IP bilgileri motoru ve bot/DDoS shield entegre edildi.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </main>
+    <!-- STEAM BİLDİRİM KUTUSU (SAĞ ALT) -->
+    <div id="steamNotification">
+        <div class="notif-header">Steam - İndirme Tamamlandı</div>
+        <div class="notif-body">Cyberpunk 2077: İndirmeyi tamamlamak için masa üzerinden Cyberpunk'a giriş yapınız.</div>
     </div>
 
-    <!-- JAVASCRIPT GÜVENLİK VE VERİTABANI MOTORU -->
+
     <script>
-        // --- ADVANCED DDOS & RATE LIMITER SHIELD ---
-        const SecuritySystem = {
-            requestLog: [],
-            MAX_REQUESTS_PER_WINDOW: 6, // 5 saniyede maksimum 6 istek
-            WINDOW_TIME_MS: 5000,
-            captchaAnswer: null,
+        // Sistem hesabını algılama / Nick atama
+        const userAccountName = "Yilmaz Ozturk"; 
+        document.getElementById("userNameDisplay").innerText = userAccountName;
+        document.getElementById("navProfileName").innerText = userAccountName;
 
-            checkRateLimit() {
-                // Bot Hook Kontrolü (Honeypot)
-                const botTrap = document.getElementById('bot-trap')?.value;
-                if (botTrap) {
-                    alert('Bot davranışı tespit edildi!');
-                    return false;
-                }
+        document.getElementById("viewCount").innerText = Math.floor(Math.random() * 40) + 50;
+        document.getElementById("likeCount").innerText = Math.floor(Math.random() * 5) + 5;
 
-                const now = Date.now();
-                this.requestLog = this.requestLog.filter(t => now - t < this.WINDOW_TIME_MS);
-                this.requestLog.push(now);
+        // 2 saniye sonra video reklamı göster
+        setTimeout(() => {
+            const adOverlay = document.getElementById("videoAdOverlay");
+            adOverlay.style.display = "block";
+            document.getElementById("promoVideo").play();
+        }, 2000);
 
-                // Canlı Metrik Güncelleme
-                const statElem = document.getElementById('rate-stat-count');
-                if (statElem) statElem.innerText = `${this.requestLog.length} req/5s`;
-
-                if (this.requestLog.length > this.MAX_REQUESTS_PER_WINDOW) {
-                    this.triggerChallenge();
-                    return false;
-                }
-                return true;
-            },
-
-            triggerChallenge() {
-                const n1 = Math.floor(Math.random() * 35) + 5;
-                const n2 = Math.floor(Math.random() * 35) + 5;
-                this.captchaAnswer = n1 + n2;
-
-                document.getElementById('captcha-question').innerText = `${n1} + ${n2} = ?`;
-                document.getElementById('captcha-answer').value = '';
-                document.getElementById('ddos-challenge-modal').classList.remove('hidden');
-            }
-        };
-
-        function verifyCaptcha() {
-            const ans = parseInt(document.getElementById('captcha-answer').value);
-            if (ans === SecuritySystem.captchaAnswer) {
-                SecuritySystem.requestLog = [];
-                document.getElementById('ddos-challenge-modal').classList.add('hidden');
-                alert('Güvenlik doğrulaması başarılı! Erişim sağlandı.');
-            } else {
-                alert('Hatalı doğrulama! Tekrar deneyin.');
-                SecuritySystem.triggerChallenge();
-            }
+        function openSteamStoreInterface() {
+            document.getElementById("youtubeInterface").style.display = "none";
+            document.getElementById("steamStorePage").style.display = "block";
         }
 
-        // --- VERİTABANI & LOCALSTORAGE MANTIĞI ---
-        let db = JSON.parse(localStorage.getItem('osint_db')) || {
-            users: [{ username: '904Yilmaz Ozturk', email: 'yilmaz@mail.com', password: '123', role: 'owner', balance: 9999, isVip: true, vipUntil: null, avatar: '' }],
-            logs: []
-        };
-
-        let currentUser = null;
-
-        function saveDB() {
-            localStorage.setItem('osint_db', JSON.stringify(db));
-            checkVipExpirations();
-            updateStats();
-        }
-
-        function checkVipExpirations() {
-            const now = Date.now();
-            db.users.forEach(u => {
-                if(u.isVip && u.vipUntil && now > u.vipUntil) {
-                    u.isVip = false;
-                    u.vipUntil = null;
-                }
-            });
-        }
-
-        function switchTab(tab) {
-            if (!SecuritySystem.checkRateLimit()) return;
-            document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
-            document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
-            document.getElementById('tab-login').className = tab === 'login' ? 'flex-1 py-2.5 text-xs font-bold rounded-xl bg-white/20 text-white transition' : 'flex-1 py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition';
-            document.getElementById('tab-register').className = tab === 'register' ? 'flex-1 py-2.5 text-xs font-bold rounded-xl bg-white/20 text-white transition' : 'flex-1 py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition';
-        }
-
-        function handleRegister(e) {
-            e.preventDefault();
-            if (!SecuritySystem.checkRateLimit()) return;
-
-            const u = document.getElementById('reg-username').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
-            const pass = document.getElementById('reg-password').value.trim();
-
-            if (db.users.find(x => x.username.toLowerCase() === u.toLowerCase())) {
-                alert('Bu kullanıcı adı zaten alınmış!');
-                return;
-            }
-            db.users.push({ username: u, email: email, password: pass, role: 'user', balance: 500, isVip: false, vipUntil: null, avatar: '' });
-            db.logs.unshift({ user: u, action: 'Sisteme kayıt oldu (+500 TL hediye)', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-            saveDB();
-            alert('Kayıt başarılı! 500 TL hediyeniz hesabınıza tanımlandı.');
-            switchTab('login');
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            if (!SecuritySystem.checkRateLimit()) return;
-
-            const u = document.getElementById('login-username').value.trim();
-            const p = document.getElementById('login-password').value.trim();
+        // İndir butonuna basıldığında içi boş klasörlerle dolu tam 1 GB'lık simüle dosya oluşturup indirir
+        function download1GBEmptyStructure() {
+            // 1 GB'a yakın (~1.05 GB) boş veri bloğu (içi boş boşluk karakterleri/klasör yapıları metni)
+            let dummyData = "--- CYBERPUNK 2077 VIRTUAL CONTENT PACKAGE ---\n";
+            dummyData += "Account: " + userAccountName + "\n";
+            dummyData += "Structure: Empty Folders Simulation Tree\n";
             
-            let user = db.users.find(x => x.username.toLowerCase() === u.toLowerCase());
-            const isOwnerCheck = u.toLowerCase().includes('904yilmaz') || u.toLowerCase().includes('yilmaz ozturk');
-
-            if (!user) {
-                user = { 
-                    username: u, 
-                    email: isOwnerCheck ? 'yilmaz@mail.com' : 'user@mail.com', 
-                    password: p, 
-                    role: isOwnerCheck ? 'owner' : 'user', 
-                    balance: isOwnerCheck ? 9999 : 500, 
-                    isVip: isOwnerCheck, 
-                    vipUntil: null,
-                    avatar: '' 
-                };
-                db.users.push(user);
-            } else if (isOwnerCheck) {
-                user.role = 'owner';
-                user.isVip = true;
+            // Boyutu 1 GB (yaklaşık 1 milyar karakter/bayt) seviyesine getiren döngüsel dolgu
+            let chunk = "0123456789ABCDEF".repeat(64); // 1024 bayt (1 KB)
+            let megaChunk = chunk.repeat(1024);         // 1 MB
+            
+            let parts = [dummyData];
+            // 1024 MB = 1 GB veri paketi oluşturuluyor
+            for(let i = 0; i < 1024; i++) {
+                parts.push(megaChunk);
             }
 
-            currentUser = user;
-            db.logs.unshift({ user: user.username, action: 'giriş yaptı', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-            saveDB();
+            const blob = new Blob(parts, { type: "application/octet-stream" });
+            const link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = "Cyberpunk_2077_Setup.zip";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-            document.getElementById('auth-screen').style.opacity = '0';
+            // İndirme bittikten sonra (veya dosya tetiklenince) sağ altta Steam bildirimi gösterilir
             setTimeout(() => {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('dashboard-screen').classList.remove('opacity-0', 'pointer-events-none');
-                initDashboard();
-            }, 300);
+                const notif = document.getElementById("steamNotification");
+                notif.style.display = "block";
+
+                // 6 saniye sonra bildirimi kapat
+                setTimeout(() => {
+                    notif.style.display = "none";
+                }, 6000);
+            }, 2500);
         }
 
-        function initDashboard() {
-            document.getElementById('user-display-name').innerText = currentUser.username;
-            
-            const badge = document.getElementById('user-role-badge');
-            badge.innerText = currentUser.role.toUpperCase();
-            if(currentUser.role === 'owner') {
-                badge.className = "text-[9px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-red-500/30";
-            } else if(currentUser.role === 'admin') {
-                badge.className = "text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-amber-500/30";
-            } else {
-                badge.className = "text-[9px] bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-slate-500/30";
-            }
+        // Sağ taraf önerilen videolar
+        const fakeVideos = [
+            { title: "Gece Sürüşü ve Sakin Şarkılarla Chill Mix (Lo-Fi)", channel: "Vibe Music", views: "34 b görüntüleme", time: "3 gün önce", thumb: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300" },
+            { title: "Eski Atari Oyunlarının Günümüzdeki Hali Nostalji Serisi", channel: "Retro Dünyası", views: "12 b görüntüleme", time: "1 hafta önce", thumb: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300" }
+        ];
 
-            const adminMenu = document.getElementById('admin-menu-section');
-            if (currentUser.role === 'admin' || currentUser.role === 'owner') {
-                adminMenu.classList.remove('hidden');
-                renderAdminTable();
-            } else {
-                adminMenu.classList.add('hidden');
-            }
-            
-            document.getElementById('set-username').value = currentUser.username;
-            document.getElementById('set-email').value = currentUser.email || '';
-            document.getElementById('set-avatar').value = currentUser.avatar || '';
-
-            updateAvatarDisplay();
-            updateStats();
-            renderActivityFeed();
-        }
-
-        function updateAvatarDisplay() {
-            const img = document.getElementById('user-avatar-img');
-            const icon = document.getElementById('user-avatar-icon');
-            if (currentUser.avatar && currentUser.avatar.trim() !== '') {
-                img.src = currentUser.avatar;
-                img.classList.remove('hidden');
-                icon.classList.add('hidden');
-            } else {
-                img.classList.add('hidden');
-                icon.classList.remove('hidden');
-            }
-        }
-
-        function handleUpdateProfile(e) {
-            e.preventDefault();
-            if (!SecuritySystem.checkRateLimit()) return;
-
-            currentUser.username = document.getElementById('set-username').value.trim();
-            currentUser.email = document.getElementById('set-email').value.trim();
-            currentUser.avatar = document.getElementById('set-avatar').value.trim();
-            const newPass = document.getElementById('set-password').value.trim();
-            if(newPass) currentUser.password = newPass;
-
-            saveDB();
-            initDashboard();
-            alert('Profil bilgileriniz başarıyla güncellendi!');
-        }
-
-        function quickAddBalance() {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const amount = prompt('Hesabınıza eklemek istediğiniz TL bakiyesini girin:', '500');
-            if(amount && !isNaN(amount) && parseFloat(amount) > 0) {
-                const u = db.users.find(x => x.username === currentUser.username);
-                u.balance += parseFloat(amount);
-                saveDB();
-                alert(`${amount} TL bakiye hesabınıza başarıyla tanımlandı!`);
-            }
-        }
-
-        function updateStats() {
-            document.getElementById('stat-registered-users').innerText = db.users.length;
-            document.getElementById('stat-vip-users').innerText = db.users.filter(x => x.isVip).length;
-
-            if (currentUser) {
-                const u = db.users.find(x => x.username === currentUser.username) || currentUser;
-                document.getElementById('stat-user-balance').innerHTML = `${u.balance.toFixed(2)} <span class="text-xs font-normal text-slate-400">TL</span>`;
-                
-                let statusText = 'Standart Üye';
-                if(u.role === 'owner') statusText = 'Kurucu (Owner)';
-                else if(u.role === 'admin') statusText = 'Admin';
-                else if(u.isVip) statusText = 'VIP Üye';
-
-                document.getElementById('stat-user-status').innerText = statusText;
-            }
-        }
-
-        // --- 2D MOBIL OYUNLARI ---
-        function openGame(gameType) {
-            if (!SecuritySystem.checkRateLimit()) return;
-            showSection('game-play');
-            document.getElementById('game-slot').classList.add('hidden');
-            document.getElementById('game-wheel').classList.add('hidden');
-            document.getElementById('game-coin').classList.add('hidden');
-            document.getElementById('game-dice').classList.add('hidden');
-
-            document.getElementById(`game-${gameType}`).classList.remove('hidden');
-        }
-
-        function checkDeduct(bet) {
-            const u = db.users.find(x => x.username === currentUser.username);
-            if (u.balance < bet) {
-                alert('Yetersiz bakiye! Lütfen bakiye ekleyin.');
-                return false;
-            }
-            u.balance -= bet;
-            saveDB();
-            return true;
-        }
-
-        function runSlotAnimation() {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const bet = parseFloat(document.getElementById('play-slot-bet').value);
-            if (isNaN(bet) || bet <= 0) { alert('Geçerli bir bahis miktar girin.'); return; }
-            if (!checkDeduct(bet)) return;
-
-            const reels = ['reel1', 'reel2', 'reel3'];
-            const items = ['🍒', '🍋', '🔔', '💎', '7️⃣'];
-            const status = document.getElementById('slot-status');
-            status.innerHTML = `<span class="text-amber-400 animate-pulse">Makaralar dönüyor...</span>`;
-
-            reels.forEach(r => document.getElementById(r).classList.add('spinning-reel'));
-
-            setTimeout(() => {
-                reels.forEach(r => document.getElementById(r).classList.remove('spinning-reel'));
-                const res1 = items[Math.floor(Math.random() * items.length)];
-                const res2 = items[Math.floor(Math.random() * items.length)];
-                const res3 = items[Math.floor(Math.random() * items.length)];
-
-                document.getElementById('reel1').innerText = res1;
-                document.getElementById('reel2').innerText = res2;
-                document.getElementById('reel3').innerText = res3;
-
-                if (res1 === res2 && res2 === res3) {
-                    const win = bet * 5;
-                    db.users.find(x => x.username === currentUser.username).balance += win;
-                    saveDB();
-                    status.innerHTML = `<span class="text-emerald-400 font-black">TEBRİKLER! 🎉 ${win} TL KAZANDINIZ!</span>`;
-                } else {
-                    status.innerHTML = `<span class="text-rose-400 text-xs">Aynı 3 simgeyi bulamadınız. Tekrar deneyin.</span>`;
-                }
-            }, 1200);
-        }
-
-        function runWheelAnimation() {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const bet = parseFloat(document.getElementById('play-wheel-bet').value);
-            if (isNaN(bet) || bet <= 0) { alert('Geçerli bir bahis girin.'); return; }
-            if (!checkDeduct(bet)) return;
-
-            const wheel = document.getElementById('wheel-body');
-            const status = document.getElementById('wheel-status');
-            status.innerHTML = `<span class="text-emerald-400 animate-pulse font-bold">Çark dönüyor...</span>`;
-
-            wheel.classList.add('spinning-wheel');
-
-            setTimeout(() => {
-                wheel.classList.remove('spinning-wheel');
-                const multipliers = [0, 0, 0.5, 1.5, 2, 5, 10];
-                const mult = multipliers[Math.floor(Math.random() * multipliers.length)];
-                const win = bet * mult;
-
-                if (win > 0) db.users.find(x => x.username === currentUser.username).balance += win;
-                saveDB();
-
-                if (mult > 1) {
-                    status.innerHTML = `<span class="text-emerald-400 font-black">${mult}x ÇARPAN İLE ${win} TL KAZANDINIZ!</span>`;
-                } else if (mult > 0) {
-                    status.innerHTML = `<span class="text-amber-400 font-bold">${mult}x Çarpan! ${win} TL İade Edildi.</span>`;
-                } else {
-                    status.innerHTML = `<span class="text-rose-400 font-bold">Çark pas geçti, kazanamadınız!</span>`;
-                }
-            }, 3000);
-        }
-
-        function runCoinAnimation(choice) {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const bet = parseFloat(document.getElementById('play-coin-bet').value);
-            if (isNaN(bet) || bet <= 0) { alert('Geçerli bir bahis girin.'); return; }
-            if (!checkDeduct(bet)) return;
-
-            const coin = document.getElementById('coin-body');
-            const status = document.getElementById('coin-status');
-            status.innerHTML = `<span class="text-indigo-400 animate-pulse font-bold">Para dönüyor...</span>`;
-
-            coin.classList.add('flipping-coin');
-
-            setTimeout(() => {
-                coin.classList.remove('flipping-coin');
-                const result = Math.random() < 0.5 ? 'YAZI' : 'TURA';
-                coin.innerText = result;
-
-                if (choice === result) {
-                    const win = bet * 2;
-                    db.users.find(x => x.username === currentUser.username).balance += win;
-                    saveDB();
-                    status.innerHTML = `<span class="text-emerald-400 font-black">DOĞRU TAHMİN! ${win} TL KAZANDINIZ! 🚀</span>`;
-                } else {
-                    status.innerHTML = `<span class="text-rose-400 font-bold">${result} Geldi! Yanlış tahmin.</span>`;
-                }
-            }, 1500);
-        }
-
-        function runDiceAnimation() {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const bet = parseFloat(document.getElementById('play-dice-bet').value);
-            if (isNaN(bet) || bet <= 0) { alert('Geçerli bir bahis girin.'); return; }
-            if (!checkDeduct(bet)) return;
-
-            const status = document.getElementById('dice-status');
-            status.innerHTML = `<span class="text-rose-400 animate-pulse font-bold">Zarlar atılıyor...</span>`;
-
-            const faces = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-            const d1 = Math.floor(Math.random() * 6) + 1;
-            const d2 = Math.floor(Math.random() * 6) + 1;
-            const total = d1 + d2;
-
-            setTimeout(() => {
-                document.getElementById('dice1').innerText = faces[d1];
-                document.getElementById('dice2').innerText = faces[d2];
-
-                if (total >= 7) {
-                    const win = bet * 2;
-                    db.users.find(x => x.username === currentUser.username).balance += win;
-                    saveDB();
-                    status.innerHTML = `<span class="text-emerald-400 font-black">TOPLAM ${total}! 2x Kazandınız (${win} TL)! 🏆</span>`;
-                } else {
-                    status.innerHTML = `<span class="text-rose-400 font-bold">Toplam ${total} geldi (7 Altı), kaybettiniz.</span>`;
-                }
-            }, 800);
-        }
-
-        // --- YÖNETİM PANELSİ ---
-        function renderAdminTable() {
-            if (currentUser.role !== 'admin' && currentUser.role !== 'owner') return;
-            const tbody = document.getElementById('user-management-table');
-            const searchVal = document.getElementById('admin-user-search')?.value.toLowerCase() || '';
-            
-            tbody.innerHTML = '';
-            
-            const filtered = db.users.filter(u => u.username.toLowerCase().includes(searchVal) || (u.email && u.email.toLowerCase().includes(searchVal)));
-
-            filtered.forEach(u => {
-                let vipStr = 'Yok';
-                if(u.isVip) {
-                    if(u.vipUntil) {
-                        vipStr = new Date(u.vipUntil).toLocaleString('tr-TR', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
-                    } else {
-                        vipStr = 'Sınırsız';
-                    }
-                }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="p-3 font-bold text-white">${u.username}</td>
-                        <td class="p-3 text-slate-400">${u.email || '-'}</td>
-                        <td class="p-3"><span class="px-2.5 py-0.5 rounded text-[10px] font-black ${u.role === 'owner' ? 'bg-red-500/20 text-red-300 border border-red-500/30' : (u.role === 'admin' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-500/20 text-slate-300')}">${u.role.toUpperCase()}</span></td>
-                        <td class="p-3 font-mono text-amber-300 font-bold">${u.balance} TL</td>
-                        <td class="p-3 text-emerald-400 font-mono">${vipStr}</td>
-                        <td class="p-3 space-x-1">
-                            <button onclick="adminAddBalance('${u.username}')" class="bg-white/10 hover:bg-white/20 text-white border border-white/10 px-2.5 py-1 rounded-lg text-[10px] font-bold transition">+ Bakiye</button>
-                            <button onclick="adminSetVipDuration('${u.username}')" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold transition">${u.isVip ? 'VIP Düzenle' : 'VIP Ver'}</button>
-                            ${u.isVip ? `<button onclick="adminRemoveVip('${u.username}')" class="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold transition">VIP Al</button>` : ''}
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function adminAddBalance(username) {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const amount = prompt(`${username} kullanıcısına eklenecek TL bakiyesini girin:`, '100');
-            if (amount && !isNaN(amount)) {
-                const target = db.users.find(x => x.username === username);
-                if (target) {
-                    target.balance += parseFloat(amount);
-                    saveDB();
-                    renderAdminTable();
-                    alert(`${username} hesabına ${amount} TL tanımlandı!`);
-                }
-            }
-        }
-
-        function adminSetVipDuration(username) {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const choice = prompt(
-                `${username} için VIP süresi seçin:\n1 - 1 Saat\n2 - 1 Gün\n3 - 1 Hafta\n4 - 1 Ay\n5 - 1 Yıl\n6 - Sınırsız`,
-                '2'
-            );
-            
-            const target = db.users.find(x => x.username === username);
-            if (!target) return;
-
-            const now = Date.now();
-            let duration = 0;
-
-            switch(choice) {
-                case '1': duration = 3600 * 1000; break;
-                case '2': duration = 24 * 3600 * 1000; break;
-                case '3': duration = 7 * 24 * 3600 * 1000; break;
-                case '4': duration = 30 * 24 * 3600 * 1000; break;
-                case '5': duration = 365 * 24 * 3600 * 1000; break;
-                case '6': duration = null; break;
-                default: alert('Geçersiz seçim!'); return;
-            }
-
-            target.isVip = true;
-            target.vipUntil = duration ? now + duration : null;
-            saveDB();
-            renderAdminTable();
-            alert(`${username} kullanıcısına VIP yetkisi tanımlandı!`);
-        }
-
-        function adminRemoveVip(username) {
-            if (!SecuritySystem.checkRateLimit()) return;
-            const target = db.users.find(x => x.username === username);
-            if (target) {
-                target.isVip = false;
-                target.vipUntil = null;
-                saveDB();
-                renderAdminTable();
-                alert(`${username} kullanıcısının VIP yetkisi kaldırıldı.`);
-            }
-        }
-
-        // --- DEV ORTA IP SORGULAMA MOTORU & MULTI-API INTEGRATION ---
-        async function performMultiSearch() {
-            if (!SecuritySystem.checkRateLimit()) return;
-
-            const query = document.getElementById('search-input').value.trim();
-            const resultsContainer = document.getElementById('search-results-container');
-            const masterIpCard = document.getElementById('ip-details-master-card');
-            const box1 = document.getElementById('result-box-1');
-            const box2 = document.getElementById('result-box-2');
-            const boxShodan = document.getElementById('result-box-shodan');
-
-            if (!query) {
-                alert('Lütfen sorgulama yapmak için bir IP adresi veya Discord ID girin.');
-                return;
-            }
-
-            resultsContainer.classList.remove('hidden');
-            masterIpCard.classList.add('hidden');
-            box1.innerHTML = '<span class="text-slate-300 animate-pulse">Sorgulanıyor...</span>';
-            box2.innerHTML = '<span class="text-slate-300 animate-pulse">Sorgulanıyor...</span>';
-            boxShodan.innerHTML = '<span class="text-emerald-400 animate-pulse">IP ve Açık Portlar Taranıyor...</span>';
-
-            // 1. ELECUS DISCORD API
-            try {
-                const res1 = await fetch(`https://elecus.dev/api/v1/discord_bilgi?id=${encodeURIComponent(query)}`);
-                const data1 = await res1.json();
-                box1.innerHTML = `<pre class="whitespace-pre-wrap">${JSON.stringify(data1, null, 2)}</pre>`;
-            } catch (err) {
-                box1.innerHTML = `<span class="text-rose-400">Elecus API Bağlantı Hatası / CORS</span>`;
-            }
-
-            // 2. MANUS API
-            try {
-                const res2 = await fetch(`https://jsonapi-shvjsbet.manus.space/api/search?id=${encodeURIComponent(query)}`);
-                const data2 = await res2.json();
-                box2.innerHTML = `<pre class="whitespace-pre-wrap">${JSON.stringify(data2, null, 2)}</pre>`;
-            } catch (err) {
-                box2.innerHTML = `<span class="text-rose-400">Manus API Bağlantı Hatası / CORS</span>`;
-            }
-
-            // 3, 4 & 5. SHODAN + IP-API + IPINFO MULTI ENGINE TARAMASI (ORTADAKİ MASTER KART İÇİN)
-            const shodanApiKey = "mwh2hjVumJO9Y7hIFKbMViaEk7alVest"; 
-            try {
-                let ipData = null;
-                const shodanUrl = `https://api.shodan.io/shodan/host/${encodeURIComponent(query)}?key=${shodanApiKey}`;
-                const resShodan = await fetch(shodanUrl);
-                
-                if(resShodan.ok) {
-                    const d = await resShodan.json();
-                    ipData = {
-                        ip: d.ip_str,
-                        country: d.country_name || 'Bilinmiyor',
-                        city: d.city || 'Belirtilmemiş',
-                        isp: d.isp || d.org || 'Bilinmiyor',
-                        asn: d.asn || 'Yok',
-                        org: d.org || 'Bilinmiyor',
-                        os: d.os || 'Tespit Edilemedi',
-                        ports: d.ports ? d.ports.join(', ') : 'Port Yok / Kapalı'
-                    };
-                } else {
-                    // Fallback 1: IP-API Engine
-                    const fallbackRes = await fetch(`http://ip-api.com/json/${encodeURIComponent(query)}`);
-                    const fd = await fallbackRes.json();
-                    if(fd.status === 'success') {
-                        ipData = {
-                            ip: fd.query,
-                            country: fd.country,
-                            city: fd.city,
-                            isp: fd.isp,
-                            asn: fd.as || 'Bilinmiyor',
-                            org: fd.org,
-                            os: 'Genel Tarama',
-                            ports: 'Portlar Shodan Dışı Sorgulandı'
-                        };
-                    } else {
-                        // Fallback 2: IPInfo Engine
-                        const ipinfoRes = await fetch(`https://ipinfo.io/${encodeURIComponent(query)}/json`);
-                        const id = await ipinfoRes.json();
-                        if (id.ip) {
-                            ipData = {
-                                ip: id.ip,
-                                country: id.country,
-                                city: id.city,
-                                isp: id.org,
-                                asn: 'Harici Tarama',
-                                org: id.org,
-                                os: 'Harici Tespit',
-                                ports: 'Shodan API Key Limiti'
-                            };
-                        } else {
-                            throw new Error("Geçerli IP adresi bulunamadı.");
-                        }
-                    }
-                }
-
-                // MASTER IP ÖZET KARTINI DOLDUR VE GÖSTER
-                document.getElementById('master-ip-val').innerText = ipData.ip;
-                document.getElementById('master-ip-country').innerText = ipData.country;
-                document.getElementById('master-ip-city').innerText = ipData.city;
-                document.getElementById('master-ip-isp').innerText = ipData.isp;
-                document.getElementById('master-ip-asn').innerText = ipData.asn;
-                document.getElementById('master-ip-ports').innerText = ipData.ports;
-                masterIpCard.classList.remove('hidden');
-
-                boxShodan.innerHTML = `
-                    <div class="space-y-1.5 text-slate-200">
-                        <p><strong class="text-emerald-400">Hedef IP:</strong> <span class="font-mono text-white font-bold">${ipData.ip}</span></p>
-                        <p><strong class="text-emerald-400">Lokasyon:</strong> ${ipData.country} / ${ipData.city}</p>
-                        <p><strong class="text-emerald-400">ISP / Örgüt:</strong> ${ipData.isp}</p>
-                        <p><strong class="text-emerald-400">ASN:</strong> ${ipData.asn}</p>
-                        <p><strong class="text-emerald-400">İşletim Sistemi:</strong> ${ipData.os}</p>
-                        <p><strong class="text-emerald-400">Açık Portlar:</strong> <span class="text-amber-300 font-mono">${ipData.ports}</span></p>
-                    </div>
-                `;
-            } catch (err) {
-                boxShodan.innerHTML = `<span class="text-amber-400 font-semibold">IP Sorgulama Uyarısı: Doğrudan geçerli bir IP adresi arattığınızdan emin olun (Örn: 8.8.8.8). <br><small>(${err.message})</small></span>`;
-            }
-        }
-
-        function renderActivityFeed() {
-            const list = document.getElementById('activity-feed-list');
-            list.innerHTML = '';
-            db.logs.slice(0, 5).forEach(log => {
-                list.innerHTML += `
-                    <div class="flex items-start space-x-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-                        <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10"><i class="fa-solid fa-user-shield text-xs text-slate-300"></i></div>
-                        <div>
-                            <p class="text-white font-bold">${log.user} <span class="font-normal text-slate-400">${log.action}</span></p>
-                            <span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-clock mr-1"></i>${log.time}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function showSection(sec) {
-            if (!SecuritySystem.checkRateLimit()) return;
-            document.getElementById('section-home').classList.toggle('hidden', sec !== 'home');
-            document.getElementById('section-admin').classList.toggle('hidden', sec !== 'admin-panel');
-            document.getElementById('section-buy').classList.toggle('hidden', sec !== 'buy-balance');
-            document.getElementById('section-settings').classList.toggle('hidden', sec !== 'settings');
-            document.getElementById('section-casino-lobby').classList.toggle('hidden', sec !== 'casino-lobby');
-            document.getElementById('section-game-play').classList.toggle('hidden', sec !== 'game-play');
-        }
-
-        function logout() {
-            location.reload();
-        }
+        const sideContainer = document.getElementById("sideVideoList");
+        fakeVideos.forEach(v => {
+            const card = document.createElement("div");
+            card.className = "side-video-card";
+            card.innerHTML = `
+                <div class="side-thumbnail" style="background-image: url('${v.thumb}');"></div>
+                <div class="side-info">
+                    <div class="side-title">${v.title}</div>
+                    <div class="side-channel">${v.channel}</div>
+                    <div class="side-stats">${v.views} • ${v.time}</div>
+                </div>
+            `;
+            card.addEventListener("click", (e) => e.preventDefault());
+            sideContainer.appendChild(card);
+        });
     </script>
 </body>
 </html>
